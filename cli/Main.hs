@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
+import Debug.Trace
 import Development.GitRev
 import qualified Data.ByteString.Lazy.Char8 as BC
 import qualified Data.Text.IO as T

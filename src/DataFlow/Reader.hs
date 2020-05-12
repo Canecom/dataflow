@@ -106,6 +106,9 @@ function = idAndAttrsNode "function" Function
 database :: Parser Node
 database = idAndAttrsNode "database" Database
 
+document :: Parser Node
+document = idAndAttrsNode "document" Document
+
 io :: Parser Node
 io = idAndAttrsNode "io" InputOutput
 
@@ -135,6 +138,7 @@ node :: Parser Node
 node = do
   n <- try function
        <|> try database
+       <|> try document
        <|> io
   commentsAndSpace
   return n
@@ -154,13 +158,13 @@ diagram :: Parser Diagram
 diagram =
   string "diagram" *> inBraces (Diagram <$> attrs <*> many (try rootNode) <*> many flow)
 
-document :: Parser Diagram
-document = commentsAndSpace *> diagram <* commentsAndSpace
+theDocument :: Parser Diagram
+theDocument = commentsAndSpace *> diagram <* commentsAndSpace
 
 -- Read the string, as named by the second argument, as a 'Diagram'.
 readDiagram :: String -> String -> Either ParseError Diagram
-readDiagram = parse document
+readDiagram = parse theDocument
 
 -- Read the file at the given file path as a 'Diagram'.
 readDiagramFile :: FilePath -> IO (Either ParseError Diagram)
-readDiagramFile = parseFromFile document
+readDiagramFile = parseFromFile theDocument

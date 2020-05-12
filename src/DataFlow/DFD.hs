@@ -3,6 +3,8 @@ module DataFlow.DFD (
   asDFD
 ) where
 
+import Debug.Trace
+
 import Text.Printf
 import Control.Monad
 import Control.Monad.State
@@ -57,25 +59,34 @@ convertNode :: C.Node -> DFD StmtList
 
 convertNode (C.InputOutput id' attrs) = return [
     NodeStmt id' [
-      Attr "shape" "square",
+      Attr "shape" "rect",
       Attr "style" "bold",
       label $
-        printf "<table border=\"0\" cellborder=\"0\" cellpadding=\"2\"><tr><td>%s</td></tr></table>"
+        printf "<table border=\"0\" cellborder=\"0\"><tr><td>%s</td></tr></table>"
                 (bold $ getTitleOrBlank attrs)
     ]
   ]
 
 convertNode (C.Function id' attrs) = return [
     NodeStmt id' [
-      Attr "shape" "circle",
-      label $ bold $ getTitleOrBlank attrs
+      Attr "shape" "component",
+      label $ printf "<table border=\"0\" cellborder=\"0\"><tr><td>%s</td></tr></table>"
+              (bold $ getTitleOrBlank attrs)
     ]
   ]
 
 convertNode (C.Database id' attrs) = return [
     NodeStmt id' [
-      Attr "shape" "none",
-      label $ printf "<table sides=\"TB\" cellborder=\"0\"><tr><td>%s</td></tr></table>"
+      Attr "shape" "cylinder",
+      label $ printf "<table border=\"0\" cellborder=\"0\"><tr><td>%s</td></tr></table>"
+              (bold $ getTitleOrBlank attrs)
+    ]
+  ]
+
+convertNode (C.Document id' attrs) = return [
+    NodeStmt id' [
+      Attr "shape" "folder",
+      label $ printf "<table border=\"0\" cellborder=\"0\"><tr><td>%s</td></tr></table>"
               (bold $ getTitleOrBlank attrs)
     ]
   ]
@@ -87,6 +98,38 @@ convertFlow :: C.Flow -> DFD StmtList
 convertFlow (C.Flow i1 i2 attrs) = do
     s <- nextStep
     let stepStr = color "#3184e4" $ bold $ printf "(%d) " s
+        opStr = show <$> M.lookup "operation" attrs
+        clr = case show <$> M.lookup "color" attrs of
+            Nothing -> case opStr of
+              Just "DELETE" -> "\"#e06666\""
+              Just "INSERT" -> "\"#93c47d\""
+              Just "UPDATE" -> "\"#93c47d\""
+              Just "COPY-PASTE" -> "\"#93c47d\""
+              Just "SELECT" -> "\"#6d9eeb\""
+              Just "CALL"   -> "\"#ffd966\""
+              _        -> "black"
+            Just v -> v
+        op = if opStr == Just "SELECT" || opStr == Just "DELETE" 
+          then Just "" 
+          else opStr
+
+        weight = case show <$> M.lookup "operation" attrs of
+          Just "DELETE" -> "100"
+          Just "INSERT" -> "100"
+          Just "UPDATE" -> "100"
+          Just "COPY-PASTE" -> "80"
+          Just "CALL" -> "80"
+          Just "SELECT" -> "20"
+          _ -> "50"
+
+        penWidth = case show <$> M.lookup "operation" attrs of
+          Just "DELETE" -> "3"
+          Just "INSERT" -> "3"
+          Just "UPDATE" -> "3"
+          Just "COPY-PASTE" -> "3"
+          Just "CALL" -> "2"
+          Just "SELECT" -> "1"
+          _ -> "2"
 
         asRows :: C.Value -> [String]
         asRows (C.String s) = lines s
@@ -97,15 +140,18 @@ convertFlow (C.Flow i1 i2 attrs) = do
           printf "<table border=\"0\" cellborder=\"0\" cellpadding=\"2\">%s</table>" r
           where r = concatMap (printf "<tr><td>%s</td></tr>") rows :: String
 
-        rows = case (M.lookup "operation" attrs, M.lookup "data" attrs) of
-                (Just op, Just d) -> (stepStr ++ bold (show op)) : map small (asRows d)
-                (Just op, Nothing) -> [stepStr ++ bold (show op)]
+        rows = case (op, M.lookup "data" attrs) of
+                (Just op, Just d) -> (stepStr ++ bold (op)) : map small (asRows d)
+                (Just op, Nothing) -> [stepStr ++ bold (op)]
                 (Nothing, Just d) -> stepStr : map small (asRows d)
                 _ -> []
     return [
         EdgeStmt (EdgeExpr (IDOperand (NodeID i1 Nothing))
                           Arrow
                           (IDOperand (NodeID i2 Nothing))) [
+          Attr "color" clr,
+          Attr "weight" weight,
+          Attr "penwidth" penWidth,
           label $ rowsToTable rows
         ]
       ]

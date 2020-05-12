@@ -44,6 +44,8 @@ data Node =
             | Function ID Attributes
             -- | A /Database/ in DFD.
             | Database ID Attributes
+            -- | A /Document/ in DFD.
+            | Document ID Attributes
             deriving (Show, Eq)
 
 -- | Describes the flow of data between two nodes.

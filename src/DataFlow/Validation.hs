@@ -21,6 +21,7 @@ getNodeIDs (Diagram _ nodes _) = concatMap getRootNodeId nodes
   where getId (InputOutput i _) = [i]
         getId (Function i _) = [i]
         getId (Database i _) = [i]
+        getId (Document i _) = [i]
         getRootNodeId (Node node) = getId node
         getRootNodeId (TrustBoundary _ _ nodes) = concatMap getId nodes
 

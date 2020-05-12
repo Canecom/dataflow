@@ -41,6 +41,8 @@ convertNode b (Function id attrs) =
   JG.Node id `withLabelAndMetadataFrom` addBoundary b (addType "function" $ convertAttrs attrs)
 convertNode b (Database id attrs) =
   JG.Node id `withLabelAndMetadataFrom` addBoundary b (addType "database" $ convertAttrs attrs)
+convertNode b (Document id attrs) =
+  JG.Node id `withLabelAndMetadataFrom` addBoundary b (addType "document" $ convertAttrs attrs)
 
 convertRootNode :: RootNode -> [JG.Node]
 convertRootNode (Node node) = [convertNode Nothing node]
